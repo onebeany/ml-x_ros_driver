@@ -199,9 +199,9 @@ void ml_scene_data_callback(void* arg, SOSLAB::LidarML::scene_t& scene)
             
 
             // 2. Point Cloud data setting
-            msg_pointcloud_lio->points[idx].x = x;
-            msg_pointcloud_lio->points[idx].y = y;
-            msg_pointcloud_lio->points[idx].z = z;
+            msg_pointcloud->points[idx].x = x;
+            msg_pointcloud->points[idx].y = y;
+            msg_pointcloud->points[idx].z = z;
             
             if(!scene.intensity_image.empty()) {
                 msg_pointcloud->points[idx].intensity = static_cast<float>(scene.intensity_image[0][idx]);
@@ -291,7 +291,7 @@ int main (int argc, char **argv)
     /* Depth Completion */
     lidar_ml->depth_completion(depth_completion_enable);
 
-    bool success = lidar_ml->sync_localtime();
+    success = lidar_ml->sync_localtime();
     if (success) {
         ROS_INFO("Lidar time synchronized with host computer");
     } else {
