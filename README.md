@@ -1,4 +1,4 @@
-#ml-x_ros_driver
+# ml-x_ros_driver
 
 This repsitory is supporting ROS topic `\ml_\pointcloud` of ML-X LiDAR.
 
@@ -17,7 +17,7 @@ This repsitory is supporting ROS topic `\ml_\pointcloud` of ML-X LiDAR.
 		
 ## Use PTP
 
-For using PTP, refer [ML-X SDK User Guide](file:///home/user/Downloads/ML-X_User_Guide_v2.3.2(EN).pdf)
+For using PTP, refer [ML-X SDK User Guide](https://github.com/SOSLAB-github/ML-X_SDK/blob/main/User_Guide/ML-X_User_Guide_v2.3.2(EN).pdf)
 
 In ml-x_ros_driver, there is `start_ptp.sh` which supports start/stop/restart/status of ptp.
 
