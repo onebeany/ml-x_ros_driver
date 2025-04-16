@@ -6,7 +6,29 @@
 #include "ml/libsoslab_ml.h"
 
 typedef pcl::PointXYZRGB PointRGB_T;
-typedef pcl::PointCloud<PointRGB_T> PointCloud_T;
+typedef pcl::PointCloud<PointRGB_T> PointCloudRGB_T;
+
+namespace mlx_ros {
+    struct EIGEN_ALIGN16 Point {
+        PCL_ADD_POINT4D;        // x, y, z, padding
+        float intensity;        
+        uint32_t offset_time;   // nanoseconds
+        uint16_t ring;          // ring number (row number)
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    };
+}
+  
+POINT_CLOUD_REGISTER_POINT_STRUCT(mlx_ros::Point,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (float, intensity, intensity)
+    (uint32_t, offset_time, offset_time)
+    (uint16_t, ring, ring)
+)
+
+typedef pcl::PointCloud<mlx_ros::Point> PointCloud_T;
+
 
 int nCols = 0;
 int nRows = 0;
@@ -29,12 +51,14 @@ static const char* DEFAULT_FRAME_ID = "map";
 image_transport::Publisher pub_depth;
 image_transport::Publisher pub_intensity;
 image_transport::Publisher pub_ambient;
+ros::Publisher pub_lidar_rgb;
 ros::Publisher pub_lidar;
 
 sensor_msgs::ImagePtr msg_ambient;
 sensor_msgs::ImagePtr msg_depth;
 sensor_msgs::ImagePtr msg_intensity;
 
+PointCloudRGB_T::Ptr msg_pointcloud_rgb(new PointCloudRGB_T);
 PointCloud_T::Ptr msg_pointcloud(new PointCloud_T);
 
 int max_ambient_img_val = 30000;
@@ -124,35 +148,78 @@ void ml_scene_data_callback(void* arg, SOSLAB::LidarML::scene_t& scene)
         }
     }
 
-    /* Point Cloud */
+    // RGB Point Cloud for visualization
+    msg_pointcloud_rgb->header.frame_id = DEFAULT_FRAME_ID;
+    msg_pointcloud_rgb->width = width;
+    msg_pointcloud_rgb->height = height;
+    msg_pointcloud_rgb->points.resize(pointcloud.size());
+
+
+    // Point Cloud for real usage
     msg_pointcloud->header.frame_id = DEFAULT_FRAME_ID;
     msg_pointcloud->width = width;
     msg_pointcloud->height = height;
     msg_pointcloud->points.resize(pointcloud.size());
 
+    uint64_t base_timestamp = scene.timestamp[0];
+    for (int row = 1; row < height; row++) {
+        if (scene.timestamp[row] < base_timestamp) {
+            base_timestamp = scene.timestamp[row];
+        }
+    }
+
+    // Convert LiDAR ts to ROS ts
+    ros::Time sensor_time;
+    sensor_time.sec = base_timestamp / 1000000000ULL;
+    sensor_time.nsec = base_timestamp % 1000000000ULL;
+
     for (int col=0; col < width; col++) {
         for (int row = 0; row < height; row++) {
             int idx = col + (width * row);
-
+    
             //unit : (m)
-            msg_pointcloud->points[idx].x = pointcloud[idx].x / 1000.0 ;
-            msg_pointcloud->points[idx].y = pointcloud[idx].y / 1000.0 ;
-            msg_pointcloud->points[idx].z = pointcloud[idx].z / 1000.0 ;
+            float x = pointcloud[idx].x / 1000.0;
+            float y = pointcloud[idx].y / 1000.0;
+            float z = pointcloud[idx].z / 1000.0;
+            
+            // 1. RGB Point Cloud data setting
+            msg_pointcloud_rgb->points[idx].x = x;
+            msg_pointcloud_rgb->points[idx].y = y;
+            msg_pointcloud_rgb->points[idx].z = z;
 
             if(!scene.intensity_image.empty()){
-                msg_pointcloud->points[idx].r = (uint8_t)(intensity_image.at<cv::Vec3b>(row, col)[0]);
-                msg_pointcloud->points[idx].g = (uint8_t)(intensity_image.at<cv::Vec3b>(row, col)[1]);
-                msg_pointcloud->points[idx].b = (uint8_t)(intensity_image.at<cv::Vec3b>(row, col)[2]);
+                msg_pointcloud_rgb->points[idx].r = (uint8_t)(intensity_image.at<cv::Vec3b>(row, col)[0]);
+                msg_pointcloud_rgb->points[idx].g = (uint8_t)(intensity_image.at<cv::Vec3b>(row, col)[1]);
+                msg_pointcloud_rgb->points[idx].b = (uint8_t)(intensity_image.at<cv::Vec3b>(row, col)[2]);
+            } else {
+                msg_pointcloud_rgb->points[idx].r = 255;
+                msg_pointcloud_rgb->points[idx].g = 255;
+                msg_pointcloud_rgb->points[idx].b = 255;
             }
-            else{
-                msg_pointcloud->points[idx].r = 255;
-                msg_pointcloud->points[idx].g = 255;
-                msg_pointcloud->points[idx].b = 255;
+            
+
+            // 2. Point Cloud data setting
+            msg_pointcloud_lio->points[idx].x = x;
+            msg_pointcloud_lio->points[idx].y = y;
+            msg_pointcloud_lio->points[idx].z = z;
+            
+            if(!scene.intensity_image.empty()) {
+                msg_pointcloud->points[idx].intensity = static_cast<float>(scene.intensity_image[0][idx]);
+            } else {
+                msg_pointcloud->points[idx].intensity = 0.0f;
             }
+            
+            // time offset setting
+            uint32_t time_offset_ns = static_cast<uint32_t>(scene.timestamp[row] - base_timestamp);
+            msg_pointcloud->points[idx].offset_time = time_offset_ns;
+            
+            // ring setting (row number)
+            msg_pointcloud->points[idx].ring = static_cast<uint16_t>(row);
         }
     }
-    // publish the pointcloud
-    pcl_conversions::toPCL(ros::Time::now(), msg_pointcloud->header.stamp);
+    pcl_conversions::toPCL(sensor_time, msg_pointcloud_rgb->header.stamp);
+    pcl_conversions::toPCL(sensor_time, msg_pointcloud->header.stamp);
+    pub_lidar_rgb.publish(msg_pointcloud_rgb);
     pub_lidar.publish(msg_pointcloud);
 }
 
@@ -189,6 +256,8 @@ int main (int argc, char **argv)
     pub_depth = it.advertise("depth_color", 1);
     pub_intensity = it.advertise("intensity_color", 1);
     pub_ambient = it.advertise("ambient_color", 1);
+
+    pub_lidar_rgb = nh.advertise<PointCloudRGB_T>("pointcloud_rgb", 10);
     pub_lidar = nh.advertise<PointCloud_T>("pointcloud", 10);
 
     SOSLAB::ip_settings_t ip_settings_device;
@@ -221,6 +290,13 @@ int main (int argc, char **argv)
     lidar_ml->fps10(fps10_enable);
     /* Depth Completion */
     lidar_ml->depth_completion(depth_completion_enable);
+
+    bool success = lidar_ml->sync_localtime();
+    if (success) {
+        ROS_INFO("Lidar time synchronized with host computer");
+    } else {
+        ROS_WARN("Failed to synchronize lidar time");
+    }
 
     lidar_ml->register_scene_callback(ml_scene_data_callback, nullptr);
 	success = lidar_ml->run();

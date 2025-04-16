@@ -51,7 +51,7 @@ namespace SOSLAB
 		bool fps10(bool en);
 		bool depth_completion(bool en);
 		bool set_flaring_score(float val);
-
+		
 		bool ambient_enable(bool en);
 		bool depth_enable(bool en);
 		bool intensity_enable(bool en);
