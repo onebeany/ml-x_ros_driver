@@ -7,6 +7,7 @@
 
 typedef pcl::PointXYZRGB PointRGB_T;
 typedef pcl::PointCloud<PointRGB_T> PointCloudRGB_T;
+typedef pcl::PointCloud<mlx_ros::Point> PointCloud_T;
 
 namespace mlx_ros {
     struct EIGEN_ALIGN16 Point {
@@ -27,8 +28,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(mlx_ros::Point,
     (uint16_t, ring, ring)
 )
 
-typedef pcl::PointCloud<mlx_ros::Point> PointCloud_T;
-
+static int g_scan_frequency_hz = 20; // Frequency of LiDAR
 
 int nCols = 0;
 int nRows = 0;
@@ -193,16 +193,22 @@ void ml_scene_data_callback(void* arg, SOSLAB::LidarML::scene_t& scene)
 	std::cout << "Current ros time: " << ros::Time::now() << std::endl;
 	}
 	*/
+	
+	// scan period and point interval calculation
+    // scan_period_ns = 1e9 / frequency
+    // point_interval_ns = scan_period_ns / (rows * cols)
+    uint64_t scan_period_ns    = 1000000000ULL / g_scan_frequency_hz;
+    uint64_t total_points      = static_cast<uint64_t>(height) * width;
+    uint32_t point_interval_ns = static_cast<uint32_t>(scan_period_ns / total_points);
 
-    // Convert LiDAR ts to ROS ts
-    ros::Time sensor_time;
-    sensor_time.sec = base_timestamp >> 32; 
-    sensor_time.nsec = base_timestamp & 0xFFFFFFFF; 
+    for (int row=0; row < height; row++) {
 
-    for (int col=0; col < width; col++) {
-        for (int row = 0; row < height; row++) {
+		uint64_t row_offset = scene.timestamp[row] - base_timestamp;
+
+        for (int col = 0; col < width; col++) {
+
             int idx = col + (width * row);
-    
+  
             //unit : (m)
             float x = pointcloud[idx].x / 1000.0;
             float y = pointcloud[idx].y / 1000.0;
@@ -236,8 +242,8 @@ void ml_scene_data_callback(void* arg, SOSLAB::LidarML::scene_t& scene)
             }
             
             // time offset setting
-            uint32_t time_offset_ns = static_cast<uint32_t>(scene.timestamp[row] - base_timestamp);
-            msg_pointcloud->points[idx].offset_time = time_offset_ns;
+			uint32_t offset_ns = static_cast<uint32_t>(row_offset + col * point_interval_ns);
+            msg_pointcloud->points[idx].offset_time = offset_ns;
             
 			// std::cout << "row[" << row << "] offset_time: " << time_offset_ns << std::endl;
 
@@ -245,6 +251,12 @@ void ml_scene_data_callback(void* arg, SOSLAB::LidarML::scene_t& scene)
             msg_pointcloud->points[idx].ring = static_cast<uint16_t>(row);
         }
     }
+	
+	// Convert LiDAR ts to ROS ts
+	ros::Time sensor_time;
+	sensor_time.sec = base_timestamp >> 32;
+	sensor_time.nsec = base_timestamp & 0xFFFFFFFF;
+
     pcl_conversions::toPCL(sensor_time, msg_pointcloud_rgb->header.stamp);
     pcl_conversions::toPCL(sensor_time, msg_pointcloud->header.stamp);
     pub_lidar_rgb.publish(msg_pointcloud_rgb);
@@ -318,6 +330,7 @@ int main (int argc, char **argv)
 
     /* FPS 10 */
     lidar_ml->fps10(fps10_enable);
+	g_scan_frequency_hz = fps10_enable ? 10 : 20;
     /* Depth Completion */
     lidar_ml->depth_completion(depth_completion_enable);
 /*
