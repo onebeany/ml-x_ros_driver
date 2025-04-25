@@ -320,24 +320,74 @@ int main (int argc, char **argv)
     lidar_ml->fps10(fps10_enable);
     /* Depth Completion */
     lidar_ml->depth_completion(depth_completion_enable);
-/*
-    success = lidar_ml->sync_localtime();
+/*  
+	// If you want to syncronize lidar's inner clock with system clock, (the base time will be system clock) comment out following code:
+    // TODO) Figure out the affection of this function with PTP
+	success = lidar_ml->sync_localtime();
     if (success) {
         ROS_INFO("Lidar time synchronized with host computer");
     } else {
         ROS_WARN("Failed to synchronize lidar time");
     }
 */
+
     lidar_ml->register_scene_callback(ml_scene_data_callback, nullptr);
+
+	// For syncronizing multi LiDARs
+	
+	bool use_sync_start = false;
+	int expected_nodes = 1;
+	double sync_timeout = 10.0;
+
+	ros::param::get("use_sync_start", use_sync_start);
+	ros::param::get("expected_nodes", expected_nodes); 
+	ros::param::get("sync_timeout", sync_timeout);
+
+	if(use_sync_start && expected_nodes >1){
+
+		std::string node_name = ros::this_node::getName();
+		ros::param::set(node_name + "/sync_ready", true);
+
+		ROS_INFO("%s is ready", node_name.c_str());
+
+		ros::Time start_wait = ros::Time::now();
+	
+		bool all_ready = false;
+
+		while(!all_ready){
+			all_ready = true;
+
+			for(int i = 0 ; i < expected_nodes; i++){
+				std::string check_node;
+				std::string param_name = "/sync_node_list/" + std::to_string(i);
+
+				if(ros::param::get(param_name, check_node) && check_node != node_name){
+					bool node_ready = false;
+					if(!ros::param::get(check_node + "/sync_ready", node_ready) || !node_ready){
+						all_ready = false;
+						break;
+					}
+				}
+			}
+
+			if((ros::Time::now() - start_wait).toSec() > sync_timeout){
+				ROS_ERROR("[%s} Sync Timeout! Terminate the node.", node_name.c_str());
+				ros::shutdown();
+				exit(1);
+			}
+		}
+		ROS_INFO("[%s] All nodes are ready. Start LiDAR scan...", node_name.c_str());
+	}
+
 	success = lidar_ml->run();
 
 	if (!success) {
-		std::cerr << "LiDAR ML :: run failed." << std::endl;
+		std::cerr << "[" << (ros::this_node::getName()).c_str() << "] LiDAR ML :: run failed." << std::endl;
 	}
 	else {
-		std::cout << "LiDAR ML :: run." << std::endl;
+		std::cout  << "[" << (ros::this_node::getName()).c_str() << "] LiDAR ML :: run." << std::endl;
 	}
-    std::cout << "LiDAR ML :: Streaming started!" << std::endl;
+    std::cout << "[" << (ros::this_node::getName()).c_str() << "] LiDAR ML :: Streaming started!" << std::endl;
 
     /* publishing start */
     ros::Rate r(50);
@@ -347,7 +397,7 @@ int main (int argc, char **argv)
     }
 
     lidar_ml->stop();
-    std::cout << "Streaming stopped!" << std::endl;
+    std::cout << "[" << (ros::this_node::getName()).c_str() << "] Streaming stopped!" << std::endl;
 
     lidar_ml->disconnect();
 

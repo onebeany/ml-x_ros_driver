@@ -1,0 +1,57 @@
+<launch>
+
+	<!-- Setting for sync -->
+
+	<param name="use_sync_start" value="true" type="bool"/>
+	<param name="expected_nodes" value="2" type="int"/>
+	<param name="sync_timeout" value="10.0" type="double"/>
+
+	<param name = "/sync_node_list/0" value="/ml_" type="string"/>
+	<param name = "/sync_node_list/1" value="/ml_second" type="string"/>
+	
+	<!-- First LiDAR -->
+	<node pkg="ml" type="ml" name="ml_" output="screen">
+
+		<param name="ip_address_device"       value="192.168.1.11" type="string"/>
+        <param name="ip_port_device"          value="2000"         type="int"/>
+
+        <param name="ip_address_pc"           value="0.0.0.0"      type="string"/>
+        <param name="ip_port_pc"              value="0"            type="int"/>
+
+        <param name="ambient_enable"          value="true"         type="bool"/>
+        <param name="depth_enable"            value="true"         type="bool"/>
+        <param name="intensity_enable"        value="true"         type="bool"/>
+        <param name="multi_echo_enable"       value="false"        type="bool"/>
+
+        <param name="depth_completion_enable" value="false"        type="bool"/>
+        <param name="fps10"                   value="false"        type="bool"/>
+		
+		<param name="sync_ready" value="false" type="bool"/>
+		
+	</node>
+
+	<!-- Second LIDAR -->
+	<node pkg="ml" type="ml" name="ml_second" output="screen">
+
+        <param name="ip_address_device" value="192.168.2.12" type="string"/>
+        <param name="ip_port_device"    value="2000"         type="int"/>
+
+        <param name="ip_address_pc"     value="0.0.0.0"      type="string"/>
+        <param name="ip_port_pc"        value="0"         type="int"/>
+
+        <param name="ambient_enable"          value="true"         type="bool"/>
+        <param name="depth_enable"            value="true"         type="bool"/>
+        <param name="intensity_enable"        value="true"         type="bool"/>
+        <param name="multi_echo_enable"       value="false"        type="bool"/>
+
+        <param name="depth_completion_enable" value="false"        type="bool"/>
+        <param name="fps10"                   value="false"        type="bool"/>
+
+		<param name="sync_ready" value="false" type="bool"/>
+		
+	</node>
+
+	<!-- Visualisation RVIZ --> 
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find ml)/rviz/demo.rviz"/>
+
+</launch>

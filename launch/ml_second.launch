@@ -1,7 +1,7 @@
 <launch>
   <node pkg="ml" type="ml" name="ml_second" output="screen">
 
-        <param name="ip_address_device" value="192.168.1.11" type="string"/>
+        <param name="ip_address_device" value="192.168.2.12" type="string"/>
         <param name="ip_port_device"    value="2000"         type="int"/>
 
         <param name="ip_address_pc"     value="0.0.0.0"      type="string"/>
