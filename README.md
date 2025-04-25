@@ -34,6 +34,8 @@ roslaunch ml ml.launch
 roslaunch ml ml_multi.launch
 ```
 
+**Note:** The current version supports up to two LiDARs in multi mode. Support for more than two LiDARs will be added in a future update.
+
 #### Important: IP Configuration for Multi-LiDAR Setup
 
 When using multiple ML-X LiDARs, each device must have a unique IP address configuration:
