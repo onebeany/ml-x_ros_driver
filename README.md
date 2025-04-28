@@ -9,17 +9,6 @@ This repository provides a ROS driver for ML-X LiDAR sensors, supporting both si
 - Precision Time Protocol (PTP) synchronization support
 - Configuration of sensor modes (ambient, depth, intensity, multi-echo)
 
-## Topic Information
-
-The `/ml_/pointcloud` topic publishes sensor_msgs/PointCloud2 data with the following fields:
-
-1. `x`, `y`, `z` - 3D coordinates
-2. `intensity` - Intensity values 
-3. `ring` - Row number that the point belongs to
-4. `offset_time` - Relative time from base timestamp
-   - ML-X LiDAR provides the timestamp for each row, so points in the same row have the same offset_time
-   - Base timestamp is the timestamp of row[0]
-
 ## Installation and Build
 
 ### Dependencies
@@ -41,15 +30,19 @@ catkin_make
 catkin build
 ```
 
-## Usage
+## Basic Usage (Single LiDAR)
 
-### Single LiDAR
+To run a single ML-X LiDAR:
 
 ```
 roslaunch ml-x_ros_driver ml.launch
 ```
 
-### Multiple LiDARs with Synchronization
+This will start the driver and open an RViz window with a preconfigured visualization.
+
+## Advanced Usage (Multiple LiDARs)
+
+### Running Multiple LiDARs with Synchronization
 
 ```
 roslaunch ml-x_ros_driver ml_multi.launch
@@ -57,7 +50,7 @@ roslaunch ml-x_ros_driver ml_multi.launch
 
 **Note:** The current version supports up to two LiDARs in multi mode. Support for more than two LiDARs will be added in a future update.
 
-#### Important: IP Configuration for Multi-LiDAR Setup
+### IP Configuration for Multi-LiDAR Setup
 
 When using multiple ML-X LiDARs, each device must have a unique IP address configuration:
 
@@ -73,15 +66,30 @@ When using multiple ML-X LiDARs, each device must have a unique IP address confi
 
    Note that the subnet (third number) is different (1 vs 2) for each LiDAR. Using the same subnet for multiple LiDARs can cause communication conflicts and data loss.
 
-#### Launch File Parameters
+## Configuration Parameters
 
-The multi-LiDAR launch file includes synchronization parameters:
+### Network Configuration
+- `ip_address_device`: LiDAR device IP address
+- `ip_port_device`: LiDAR device port (default: 2000)
+- `ip_address_pc`: PC network interface IP address
+- `ip_port_pc`: PC port for receiving data
+
+### Data Configuration
+- `ambient_enable`: Enable ambient data (default: true)
+- `depth_enable`: Enable depth data (default: true)
+- `intensity_enable`: Enable intensity data (default: true)
+- `multi_echo_enable`: Enable multi-echo data (default: false)
+- `depth_completion_enable`: Enable depth completion (default: false)
+- `fps10`: Enable 10 FPS mode (false = 20 FPS, default: false)
+
+### Synchronization Parameters (For multi-LiDAR setup)
 - `use_sync_start`: Enable synchronized start of scanning
 - `expected_nodes`: Number of LiDARs to synchronize
-- `sync_timeout`: Maximum wait time for synchronization
+- `sync_timeout`: Maximum wait time for synchronization (seconds)
 - `sync_node_list`: List of LiDAR node names to synchronize
+- `sync_ready`: Internal parameter for synchronization status
 
-## Time Synchronization
+## Time Synchronization (PTP)
 
 The `sync.sh` script provides PTP (Precision Time Protocol) and PHC2SYS synchronization for precise timing between multiple LiDARs and the system clock.
 
@@ -129,27 +137,15 @@ source ~/.bashrc
 
 For more information on PTP, refer to the [ML-X SDK User Guide](https://github.com/SOSLAB-github/ML-X_SDK/blob/main/User_Guide/ML-X_User_Guide_v2.3.2(EN).pdf)
 
-## Configuration Parameters
+## Technical Details
 
-The following parameters can be configured in the launch files:
+### Topic Information
 
-### Network Configuration
-- `ip_address_device`: LiDAR device IP address
-- `ip_port_device`: LiDAR device port (default: 2000)
-- `ip_address_pc`: PC network interface IP address
-- `ip_port_pc`: PC port for receiving data
+The `/ml_/pointcloud` topic publishes sensor_msgs/PointCloud2 data with the following fields:
 
-### Data Configuration
-- `ambient_enable`: Enable ambient data (default: true)
-- `depth_enable`: Enable depth data (default: true)
-- `intensity_enable`: Enable intensity data (default: true)
-- `multi_echo_enable`: Enable multi-echo data (default: false)
-- `depth_completion_enable`: Enable depth completion (default: false)
-- `fps10`: Enable 10 FPS mode (false = 20 FPS, default: false)
-
-### Synchronization Parameters (For multi-LiDAR setup)
-- `use_sync_start`: Enable synchronized start of scanning
-- `expected_nodes`: Number of LiDARs to synchronize
-- `sync_timeout`: Maximum wait time for synchronization (seconds)
-- `sync_node_list`: List of LiDAR node names to synchronize
-- `sync_ready`: Internal parameter for synchronization status
+1. `x`, `y`, `z` - 3D coordinates
+2. `intensity` - Intensity values 
+3. `ring` - Row number that the point belongs to
+4. `offset_time` - Relative time from base timestamp
+   - ML-X LiDAR provides the timestamp for each row, so points in the same row have the same offset_time
+   - Base timestamp is the timestamp of row[0]
