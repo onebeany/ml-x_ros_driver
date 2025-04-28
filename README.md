@@ -20,18 +20,39 @@ The `/ml_/pointcloud` topic publishes sensor_msgs/PointCloud2 data with the foll
    - ML-X LiDAR provides the timestamp for each row, so points in the same row have the same offset_time
    - Base timestamp is the timestamp of row[0]
 
+## Installation and Build
+
+### Dependencies
+- ROS (tested with Kinetic, Melodic, and Noetic)
+- C++14 compatible compiler
+- ROS packages: roscpp, pcl_ros, image_transport, sensor_msgs, cv_bridge, std_msgs
+- External libraries: Boost, OpenCV, PCL
+
+### Building
+```
+# Clone the repository into your catkin workspace
+cd ~/catkin_ws/src
+git clone https://github.com/onebeany/ml-x_ros_driver.git
+
+# Build
+cd ~/catkin_ws
+catkin_make
+# or
+catkin build
+```
+
 ## Usage
 
 ### Single LiDAR
 
 ```
-roslaunch ml ml.launch
+roslaunch ml-x_ros_driver ml.launch
 ```
 
 ### Multiple LiDARs with Synchronization
 
 ```
-roslaunch ml ml_multi.launch
+roslaunch ml-x_ros_driver ml_multi.launch
 ```
 
 **Note:** The current version supports up to two LiDARs in multi mode. Support for more than two LiDARs will be added in a future update.
@@ -107,3 +128,28 @@ source ~/.bashrc
 - `ptp monitor {1|2}` - Monitor PTP with different verbosity levels
 
 For more information on PTP, refer to the [ML-X SDK User Guide](https://github.com/SOSLAB-github/ML-X_SDK/blob/main/User_Guide/ML-X_User_Guide_v2.3.2(EN).pdf)
+
+## Configuration Parameters
+
+The following parameters can be configured in the launch files:
+
+### Network Configuration
+- `ip_address_device`: LiDAR device IP address
+- `ip_port_device`: LiDAR device port (default: 2000)
+- `ip_address_pc`: PC network interface IP address
+- `ip_port_pc`: PC port for receiving data
+
+### Data Configuration
+- `ambient_enable`: Enable ambient data (default: true)
+- `depth_enable`: Enable depth data (default: true)
+- `intensity_enable`: Enable intensity data (default: true)
+- `multi_echo_enable`: Enable multi-echo data (default: false)
+- `depth_completion_enable`: Enable depth completion (default: false)
+- `fps10`: Enable 10 FPS mode (false = 20 FPS, default: false)
+
+### Synchronization Parameters (For multi-LiDAR setup)
+- `use_sync_start`: Enable synchronized start of scanning
+- `expected_nodes`: Number of LiDARs to synchronize
+- `sync_timeout`: Maximum wait time for synchronization (seconds)
+- `sync_node_list`: List of LiDAR node names to synchronize
+- `sync_ready`: Internal parameter for synchronization status

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(ml)
+project(ml-x_ros_driver)
 
 ## Compile as C++14, supported in ROS Kinetic and newer
 add_compile_options(-std=c++14 -O0)

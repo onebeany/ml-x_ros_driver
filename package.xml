@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ml</name>
+  <name>ml-x_ros_driver</name>
   <version>0.0.0</version>
-  <description>The ml package</description>
+  <description>The ML-X ROS driver package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

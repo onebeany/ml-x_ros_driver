@@ -10,7 +10,7 @@
 	<param name = "/sync_node_list/1" value="/ml_second" type="string"/>
 	
 	<!-- First LiDAR -->
-	<node pkg="ml" type="ml" name="ml_" output="screen">
+	<node pkg="ml-x_ros_driver" type="ml-x_ros_driver" name="ml_" output="screen">
 
 		<param name="ip_address_device"       value="192.168.1.11" type="string"/>
         <param name="ip_port_device"          value="2000"         type="int"/>
@@ -31,7 +31,7 @@
 	</node>
 
 	<!-- Second LIDAR -->
-	<node pkg="ml" type="ml" name="ml_second" output="screen">
+	<node pkg="ml-x_ros_driver" type="ml-x_ros_driver" name="ml_second" output="screen">
 
         <param name="ip_address_device" value="192.168.2.12" type="string"/>
         <param name="ip_port_device"    value="2000"         type="int"/>
@@ -52,6 +52,6 @@
 	</node>
 
 	<!-- Visualisation RVIZ --> 
-	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find ml)/rviz/demo.rviz"/>
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find ml-x_ros_driver)/rviz/demo.rviz"/>
 
 </launch>
