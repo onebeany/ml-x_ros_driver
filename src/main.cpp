@@ -5,10 +5,6 @@
 #include <pcl_ros/point_cloud.h>
 #include "ml/libsoslab_ml.h"
 
-typedef pcl::PointXYZRGB PointRGB_T;
-typedef pcl::PointCloud<PointRGB_T> PointCloudRGB_T;
-typedef pcl::PointCloud<mlx_ros::Point> PointCloud_T;
-
 namespace mlx_ros {
     struct EIGEN_ALIGN16 Point {
         PCL_ADD_POINT4D;        // x, y, z, padding
@@ -27,6 +23,10 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(mlx_ros::Point,
     (uint32_t, offset_time, offset_time)
     (uint16_t, ring, ring)
 )
+
+typedef pcl::PointXYZRGB PointRGB_T;
+typedef pcl::PointCloud<PointRGB_T> PointCloudRGB_T;
+typedef pcl::PointCloud<mlx_ros::Point> PointCloud_T;
 
 static int g_scan_frequency_hz = 20; // Frequency of LiDAR
 

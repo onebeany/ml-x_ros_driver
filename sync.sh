@@ -8,7 +8,7 @@ start_ptp(){
 
     for IF in "${INTERFACES[@]}"; do
         echo "[STARTING] ptp4l on $IF"
-        sudo ptp4l -i "$IF" -2 >/dev/null 2>&1 &
+        sudo ptp4l -i "$IF" >/dev/null 2>&1 &
     done
 
     echo "[STARTING] phc2sys: ${INTERFACES[1]} => ${INTERFACES[0]} => system clock"
@@ -39,7 +39,7 @@ monitor_ptp(){
 
     # always show ptp4l
     for IF in "${INTERFACES[@]}"; do
-        sudo ptp4l -i "$IF" -2 -m 2>&1 \
+        sudo ptp4l -i "$IF" -m 2>&1 \
           | sed "s/^/[$IF] /" &
     done
 
