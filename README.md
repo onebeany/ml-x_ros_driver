@@ -12,7 +12,7 @@ This repository provides a ROS driver for ML-X LiDAR sensors, supporting both si
 ## Installation and Build
 
 ### Dependencies
-- ROS (tested with Kinetic, Melodic, and Noetic)
+- ROS (tested with Noetic)
 - C++14 compatible compiler
 - ROS packages: roscpp, pcl_ros, image_transport, sensor_msgs, cv_bridge, std_msgs
 - External libraries: Boost, OpenCV, PCL
